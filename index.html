@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+      @font-face {
+        font-family: "Inter";
+        src: url("Inter/static/Inter-Regular.ttf") format("truetype");
+        font-weight: 400;
+        font-style: normal;
+      }
+
+      body {
+        font-family: "Inter", sans-serif;
+      }
+
+      .main {
+        margin-left: 20px;
+        margin-right: 20px;
+        font-size: 14px;
+      }
+
+      a:link,
+      a:visited {
+        color: rgb(10, 112, 255);
+        text-decoration: none;
+      }
+
+      a:visited {
+        color: rgb(10, 112, 255);
+      }
+
+      a:hover {
+        text-decoration: underline;
+      }
+
+      li {
+        list-style-type: none;
+        /* padding-left: 1em; */
+        text-indent: 1em;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="main" id="main"></div>
+    <script>
+      function createBookmarkElement(bookmark) {
+        const bookmarkItem = document.createElement("li");
+        bookmarkItem.className = "bookmark";
+        const link = document.createElement("a");
+        link.href = bookmark.URL;
+        link.textContent = bookmark.URL;
+        bookmarkItem.appendChild(link);
+        return { bookmarkItem, link };
+      }
+
+      function createGroupElement(group, bookmarks) {
+        const groupDiv = document.createElement("details");
+        const summary = document.createElement("summary");
+        summary.tabIndex = 0; // Make the summary focusable
+        summary.textContent = group;
+        groupDiv.appendChild(summary);
+        let firstLink = null;
+        let links = [];
+        bookmarks.forEach((bookmark) => {
+          const { bookmarkItem, link } = createBookmarkElement(bookmark);
+          groupDiv.appendChild(bookmarkItem);
+          if (!firstLink) firstLink = link;
+          links.push(link);
+        });
+        groupDiv.addEventListener("keydown", (event) => {
+          if (
+            event.key === "Tab" &&
+            groupDiv.open &&
+            !event.shiftKey &&
+            document.activeElement === summary
+          ) {
+            event.preventDefault();
+            firstLink.focus();
+          }
+        });
+        return { groupDiv, summary, links };
+      }
+
+      function addKeydownEventListenerToLinks(links, groupDivs, groupIndex) {
+        links.forEach((link, linkIndex) => {
+          link.addEventListener("keydown", (event) => {
+            if (event.key === "Tab") {
+              event.preventDefault();
+              if (!event.shiftKey) {
+                if (links[linkIndex + 1]) {
+                  links[linkIndex + 1].focus();
+                } else {
+                  var nextSummary = groupDivs[groupIndex + 1]?.summary;
+                  if (!nextSummary) {
+                    nextSummary = groupDivs[0]?.summary;
+                  }
+                  if (nextSummary) {
+                    nextSummary.focus();
+                  }
+                }
+              } else {
+                if (links[linkIndex - 1]) {
+                  links[linkIndex - 1].focus();
+                } else {
+                  var previousSummary = groupDivs[groupIndex]?.summary;
+                  if (!previousSummary) {
+                    previousSummary = groupDivs[0]?.summary;
+                  }
+                  if (previousSummary) {
+                    previousSummary.focus();
+                  }
+                }
+              }
+            }
+          });
+        });
+      }
+
+      fetch("bookmarks.jsonl")
+        .then((response) => response.text())
+        .then((data) => {
+          const lines = data.split("\n");
+          const groups = {};
+          lines.forEach((line) => {
+            if (line) {
+              const bookmark = JSON.parse(line);
+              if (!groups[bookmark.group]) {
+                groups[bookmark.group] = [];
+              }
+              groups[bookmark.group].push(bookmark);
+            }
+          });
+          const main = document.getElementById("main");
+          const groupDivs = [];
+          Object.keys(groups).forEach((group) => {
+            const { groupDiv, summary, links } = createGroupElement(
+              group,
+              groups[group]
+            );
+            main.appendChild(groupDiv);
+            groupDivs.push({ groupDiv, summary, links });
+          });
+          groupDivs.forEach(({ groupDiv, summary, links }, groupIndex) => {
+            addKeydownEventListenerToLinks(links, groupDivs, groupIndex);
+          });
+        });
+    </script>
+  </body>
+</html>
