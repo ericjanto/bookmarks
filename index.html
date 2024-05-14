@@ -116,9 +116,17 @@
         });
       }
 
-      fetch("bookmarks.jsonl")
+      const isLocalhost = ["localhost", "127.0.0.1"].includes(
+        location.hostname
+      );
+      const bookmarksFile = isLocalhost
+        ? "bookmarks-local.jsonl"
+        : "bookmarks.jsonl";
+
+      fetch(bookmarksFile)
         .then((response) => response.text())
         .then((data) => {
+          console.log(bookmarksFile)
           const lines = data.split("\n");
           const groups = {};
           lines.forEach((line) => {
