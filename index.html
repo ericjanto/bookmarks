@@ -120,22 +120,21 @@
         location.hostname
       );
       const bookmarksFile = isLocalhost
-        ? "bookmarks-local.jsonl"
-        : "bookmarks.jsonl";
+        ? "bookmarks-local.csv"
+        : "bookmarks.csv";
 
       fetch(bookmarksFile)
         .then((response) => response.text())
         .then((data) => {
-          console.log(bookmarksFile)
           const lines = data.split("\n");
           const groups = {};
           lines.forEach((line) => {
             if (line) {
-              const bookmark = JSON.parse(line);
-              if (!groups[bookmark.group]) {
-                groups[bookmark.group] = [];
+              const [group, URL] = line.split(",");
+              if (!groups[group]) {
+                groups[group] = [];
               }
-              groups[bookmark.group].push(bookmark);
+              groups[group].push({ group, URL });
             }
           });
           const main = document.getElementById("main");
